@@ -37,7 +37,6 @@ function GameSettings({ game: gameProp, setGame, onClose, onHistory, onDelete, i
     lowerIsBetter: false,
     players: ['', ''],
   });
-  const [newPlayerName, setNewPlayerName] = React.useState('');
   const [showConfirm, setShowConfirm] = React.useState(false);
 
   React.useEffect(() => {
@@ -51,12 +50,23 @@ function GameSettings({ game: gameProp, setGame, onClose, onHistory, onDelete, i
   }
 
   function updatePlayer(i, v) {
-    const next = [...game.players]; next[i] = v;
+    const next = [...game.players];
+    const isNew = i >= next.length;
+    if (isNew) {
+      next.push(v);
+      if (game.scoreType === 'rounds' && v.trim()) {
+        const newHist = (game.history || []).map(r => ({ ...r, scores: [...r.scores, 0] }));
+        update({ players: next, history: newHist });
+        return;
+      }
+    } else {
+      next[i] = v;
+    }
     update({ players: next });
   }
 
   function removePlayer(i) {
-    if (game.players.length <= 2) return;
+    if (game.players.filter(p => p.trim()).length <= 2) return;
     const next = game.players.filter((_, j) => j !== i);
     const newHist = game.scoreType === 'rounds'
       ? (game.history || []).map(r => ({ ...r, scores: r.scores.filter((_, j) => j !== i) }))
@@ -65,17 +75,6 @@ function GameSettings({ game: gameProp, setGame, onClose, onHistory, onDelete, i
       .filter(h => h.player !== i)
       .map(h => ({ ...h, player: h.player > i ? h.player - 1 : h.player }));
     update({ players: next, history: newHist, runningHistory: newRunning });
-  }
-
-  function addPlayer() {
-    const name = newPlayerName.trim();
-    if (!name) return;
-    const next = [...game.players, name];
-    const newHist = game.scoreType === 'rounds'
-      ? (game.history || []).map(r => ({ ...r, scores: [...r.scores, 0] }))
-      : (game.history || []);
-    update({ players: next, history: newHist });
-    setNewPlayerName('');
   }
 
   function handleCreate() {
@@ -191,33 +190,35 @@ function GameSettings({ game: gameProp, setGame, onClose, onHistory, onDelete, i
         {/* Players */}
         <div className="section-label">Spelers</div>
         <div className="list-card">
-          {game.players.map((p, i) => (
-            <div className="row" key={i} style={{ paddingLeft: 12 }}>
-              <button
-                className="delete-btn"
-                onClick={() => removePlayer(i)}
-                aria-label={`Verwijder ${p}`}
-                disabled={game.players.length <= 2}
-                style={{ opacity: game.players.length <= 2 ? 0.3 : 1 }}
-              >−</button>
-              <input
-                className="player-input"
-                value={p}
-                onChange={e => updatePlayer(i, e.target.value)}
-                placeholder={`Speler ${i + 1}`}
-              />
-              <span style={{ color: 'var(--ink-3)' }}><Icon.Drag /></span>
-            </div>
-          ))}
-          <div className="new-player-inline">
-            <input
-              value={newPlayerName}
-              onChange={e => setNewPlayerName(e.target.value)}
-              placeholder="Nieuwe speler..."
-              onKeyDown={e => { if (e.key === 'Enter') addPlayer(); }}
-            />
-            <button onClick={addPlayer}>+</button>
-          </div>
+          {[...game.players, ''].map((p, i) => {
+            const isNewSlot = i === game.players.length && !p;
+            const filledCount = game.players.filter(p2 => p2.trim()).length;
+            return (
+              <div className="row" key={i} style={{ paddingLeft: 12 }}>
+                {isNewSlot
+                  ? <div style={{ width: 32, flexShrink: 0 }} />
+                  : <button
+                      className="delete-btn"
+                      onClick={() => removePlayer(i)}
+                      aria-label={`Verwijder ${p}`}
+                      disabled={filledCount <= 2}
+                      style={{ opacity: filledCount <= 2 ? 0.3 : 1 }}
+                    >−</button>
+                }
+                <input
+                  className="player-input"
+                  value={p}
+                  onChange={e => updatePlayer(i, e.target.value)}
+                  placeholder={isNewSlot ? 'Nieuwe speler...' : `Speler ${i + 1}`}
+                  style={isNewSlot ? { color: 'var(--ink-3)' } : {}}
+                />
+                {isNewSlot
+                  ? <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 18, flexShrink: 0 }}>+</span>
+                  : <span style={{ color: 'var(--ink-3)' }}><Icon.Drag /></span>
+                }
+              </div>
+            );
+          })}
         </div>
 
         {/* Create button */}

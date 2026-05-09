@@ -81,7 +81,8 @@ function QuickEntry({ game, setGame, onBack, onSettings }) {
       <div style={{ padding: '4px 8px 0' }}>
         {game.players.map((p, i) => {
           const total = totals[i];
-          const isWinner = game.targetScore > 0 && (game.lowerIsBetter ? total <= game.targetScore : total >= game.targetScore);
+          const isDead = game.lowerIsBetter && game.targetScore > 0 && total >= game.targetScore;
+          const isTargetWinner = !game.lowerIsBetter && game.targetScore > 0 && total >= game.targetScore;
           return (
             <div
               key={i}
@@ -92,7 +93,8 @@ function QuickEntry({ game, setGame, onBack, onSettings }) {
               <div>
                 <div className="name">
                   {p} {i === lead && <span className="crown-badge"><Icon.Crown /></span>}
-                  {isWinner && <span className="win-badge">🏆</span>}
+                  {isDead && <span className="win-badge">💀</span>}
+                  {isTargetWinner && <span className="crown-badge" style={{ color: 'oklch(0.72 0.18 85)' }}><Icon.Crown /></span>}
                 </div>
                 <div className="turns">{(game.runningHistory || []).filter(h => h.player === i && !h.removed).length} beurten</div>
               </div>

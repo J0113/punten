@@ -36,7 +36,7 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
     });
     setNewRow((game.players || []).map(() => ''));
     setTimeout(() => {
-      if (tableScrollRef.current) tableScrollRef.current.scrollTop = tableScrollRef.current.scrollHeight;
+      if (tableScrollRef.current) tableScrollRef.current.scrollTop = 0;
     }, 50);
   }
 
@@ -53,7 +53,8 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${game.players.length}, 1fr)`, gap: 8, padding: '0 12px 6px' }}>
         {game.players.map((p, i) => {
           const total = totals[i];
-          const isWinner = game.targetScore > 0 && (game.lowerIsBetter ? total <= game.targetScore : total >= game.targetScore);
+          const isDead = game.lowerIsBetter && game.targetScore > 0 && total >= game.targetScore;
+          const isTargetWinner = !game.lowerIsBetter && game.targetScore > 0 && total >= game.targetScore;
           return (
             <div key={i} style={{
               background: i === lead ? 'oklch(0.97 0.04 145 / 0.6)' : 'var(--surface)',
@@ -72,7 +73,8 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
               <div style={{ fontSize: 10, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {game.targetScore > 0 ? `/ ${game.targetScore}` : `${(game.history || []).length} rd`}
               </div>
-              {isWinner && <div className="win-badge" style={{ marginTop: 4, justifyContent: 'center' }}>🏆</div>}
+              {isDead && <div className="win-badge" style={{ marginTop: 4, justifyContent: 'center' }}>💀</div>}
+              {isTargetWinner && <div className="win-badge" style={{ marginTop: 4, justifyContent: 'center' }}>🏆</div>}
             </div>
           );
         })}
@@ -125,16 +127,26 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
               </tr>
             </thead>
             <tbody>
-              {(game.history || []).map((r, ri) => {
+              <tr className="total-row">
+                <td className="col-rd">Σ</td>
+                {totals.map((t, i) => (
+                  <td key={i} style={{ color: i === lead ? 'var(--accent-ink)' : 'var(--ink)' }}>{t}</td>
+                ))}
+                <td className="col-del"></td>
+              </tr>
+              {[...(game.history || [])].reverse().map((r, revIdx) => {
+                const ri = (game.history || []).length - 1 - revIdx;
                 const max = Math.max(...r.scores);
-                const min = Math.min(...r.scores.filter(s => s !== 0));
+                const min = game.lowerIsBetter
+                  ? Math.min(...r.scores)
+                  : Math.min(...r.scores.filter(s => s !== 0));
                 const roundBest = game.lowerIsBetter ? min : max;
                 return (
                   <tr key={ri}>
                     <td className="col-rd">{r.round}</td>
                     {r.scores.map((s, pi) => {
                       const isEditing = editing && editing.round === ri && editing.player === pi;
-                      const isWinner = s === roundBest && roundBest !== 0 && (game.lowerIsBetter ? s !== Infinity : true);
+                      const isWinner = s === roundBest && (game.lowerIsBetter ? roundBest !== Infinity : roundBest !== 0);
                       return (
                         <td
                           key={pi}
@@ -166,13 +178,6 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
                   </tr>
                 );
               })}
-              <tr className="total-row">
-                <td className="col-rd">Σ</td>
-                {totals.map((t, i) => (
-                  <td key={i} style={{ color: i === lead ? 'var(--accent-ink)' : 'var(--ink)' }}>{t}</td>
-                ))}
-                <td className="col-del"></td>
-              </tr>
             </tbody>
           </table>
         </div>

@@ -1,51 +1,5 @@
 /* global React, Icon */
 
-const SEED_GAMES = [
-  {
-    id: 'g1',
-    name: 'Klaverjassen',
-    icon: '♣️',
-    accent: 'oklch(0.62 0.16 145)',
-    players: ['Jolle', 'Corina', 'Perry', 'Mees'],
-    targetScore: 1500,
-    scoreType: 'rounds',
-    history: [
-      { round: 1, scores: [54, 78, 0, 30] },
-      { round: 2, scores: [120, 22, 88, 14] },
-      { round: 3, scores: [33, 105, 12, 60] },
-      { round: 4, scores: [70, 0, 90, 130] },
-      { round: 5, scores: [0, 142, 65, 88] },
-      { round: 6, scores: [88, 24, 110, 30] },
-    ],
-    runningHistory: [],
-    updated: '8 mei 2026',
-  },
-  {
-    id: 'g2',
-    name: 'Toep',
-    icon: '🃏',
-    accent: 'oklch(0.55 0.15 250)',
-    players: ['Jolle', 'Corina', 'Perry'],
-    targetScore: 0,
-    scoreType: 'running',
-    history: [],
-    runningHistory: [
-      { id: 'h1', player: 0, pts: 15, when: '03-05-2026 23:51' },
-      { id: 'h2', player: 1, pts: 15, when: '03-05-2026 23:54' },
-      { id: 'h3', player: 2, pts: 15, when: '03-05-2026 23:55', removed: true },
-      { id: 'h4', player: 1, pts: 0,  when: '03-05-2026 23:56' },
-      { id: 'h5', player: 2, pts: 15, when: '03-05-2026 23:56' },
-      { id: 'h6', player: 0, pts: 15, when: '04-05-2026 00:01' },
-      { id: 'h7', player: 2, pts: 95, when: '04-05-2026 00:01' },
-      { id: 'h8', player: 0, pts: 0,  when: '04-05-2026 00:01' },
-      { id: 'h9', player: 0, pts: 15, when: '04-05-2026 00:06' },
-      { id: 'h10', player: 1, pts: 55, when: '04-05-2026 00:06' },
-      { id: 'h11', player: 2, pts: 0, when: '04-05-2026 00:06' },
-    ],
-    updated: '4 mei 2026',
-  },
-];
-
 function totalsFromRounds(game) {
   const t = (game.players || []).map(() => 0);
   (game.history || []).forEach(r => (r.scores || []).forEach((s, i) => { t[i] = (t[i] || 0) + (Number(s) || 0); }));
@@ -165,4 +119,3 @@ window.totalsFromRounds = totalsFromRounds;
 window.totalsFromRunning = totalsFromRunning;
 window.leaderIndex = leaderIndex;
 window.formatDate = formatDate;
-window.SEED_GAMES = SEED_GAMES;
