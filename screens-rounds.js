@@ -85,29 +85,51 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
         <div style={{ width: 28, alignSelf: 'center', textAlign: 'center', color: 'var(--ink-3)', fontWeight: 600, fontFamily: 'Geist Mono', fontSize: 13 }}>
           {(game.history || []).length + 1}
         </div>
-        {game.players.map((p, i) => (
-          <input
-            key={i}
-            inputMode="numeric"
-            placeholder={p}
-            value={newRow[i]}
-            onChange={e => {
-              const v = e.target.value.replace(/[^\d-]/g, '');
-              setNewRow(r => r.map((x, j) => j === i ? v : x));
-            }}
-            style={{
-              flex: 1, height: 42, minWidth: 0,
-              border: '1px solid var(--line)',
-              background: 'var(--surface-2)',
-              borderRadius: 12,
-              textAlign: 'center', font: 'inherit',
-              fontVariantNumeric: 'tabular-nums',
-              fontSize: 16, fontWeight: 600,
-              color: 'var(--ink)',
-              outline: 'none',
-            }}
-          />
-        ))}
+        {game.players.map((p, i) => {
+          const isNeg = newRow[i].startsWith('-');
+          return (
+            <div key={i} style={{ flex: 1, minWidth: 0, display: 'flex', position: 'relative' }}>
+              <button
+                tabIndex={-1}
+                onClick={() => setNewRow(r => r.map((x, j) => {
+                  if (j !== i) return x;
+                  return x.startsWith('-') ? x.slice(1) : '-' + (x || '');
+                }))}
+                style={{
+                  position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)',
+                  width: 22, height: 22, borderRadius: 6,
+                  border: 'none', cursor: 'pointer', zIndex: 1,
+                  background: isNeg ? 'var(--accent, #e74c3c)' : 'var(--surface-3, rgba(0,0,0,0.08))',
+                  color: isNeg ? '#fff' : 'var(--ink-3)',
+                  fontWeight: 700, fontSize: 14, lineHeight: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+                aria-label="Wissel teken"
+              >−</button>
+              <input
+                inputMode="numeric"
+                placeholder={p}
+                value={newRow[i].replace('-', '')}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, '');
+                  setNewRow(r => r.map((x, j) => j === i ? (x.startsWith('-') ? '-' + digits : digits) : x));
+                }}
+                style={{
+                  flex: 1, height: 42, minWidth: 0, width: '100%',
+                  border: '1px solid var(--line)',
+                  background: 'var(--surface-2)',
+                  borderRadius: 12,
+                  textAlign: 'center', font: 'inherit',
+                  fontVariantNumeric: 'tabular-nums',
+                  fontSize: 16, fontWeight: 600,
+                  color: isNeg ? 'var(--accent, #e74c3c)' : 'var(--ink)',
+                  outline: 'none',
+                  paddingLeft: 28,
+                }}
+              />
+            </div>
+          );
+        })}
         <button className="go" onClick={addRound} aria-label="Ronde toevoegen" style={{ width: 56, flex: 'none' }}>
           <Icon.Plus />
         </button>
@@ -127,26 +149,16 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
               </tr>
             </thead>
             <tbody>
-              <tr className="total-row">
-                <td className="col-rd">Σ</td>
-                {totals.map((t, i) => (
-                  <td key={i} style={{ color: i === lead ? 'var(--accent-ink)' : 'var(--ink)' }}>{t}</td>
-                ))}
-                <td className="col-del"></td>
-              </tr>
-              {[...(game.history || [])].reverse().map((r, revIdx) => {
+{[...(game.history || [])].reverse().map((r, revIdx) => {
                 const ri = (game.history || []).length - 1 - revIdx;
-                const max = Math.max(...r.scores);
-                const min = game.lowerIsBetter
-                  ? Math.min(...r.scores)
-                  : Math.min(...r.scores.filter(s => s !== 0));
-                const roundBest = game.lowerIsBetter ? min : max;
+                const allZero = r.scores.every(s => s === 0);
+                const roundBest = game.lowerIsBetter ? Math.min(...r.scores) : Math.max(...r.scores);
                 return (
                   <tr key={ri}>
                     <td className="col-rd">{r.round}</td>
                     {r.scores.map((s, pi) => {
                       const isEditing = editing && editing.round === ri && editing.player === pi;
-                      const isWinner = s === roundBest && (game.lowerIsBetter ? roundBest !== Infinity : roundBest !== 0);
+                      const isWinner = !allZero && s === roundBest;
                       return (
                         <td
                           key={pi}
@@ -157,7 +169,6 @@ function RoundsEntry({ game, setGame, onBack, onSettings }) {
                             <input
                               autoFocus
                               type="number"
-                              inputMode="numeric"
                               defaultValue={s || ''}
                               onBlur={e => { updateCell(ri, pi, e.target.value); setEditing(null); }}
                               onKeyDown={e => { if (e.key === 'Enter') { updateCell(ri, pi, e.target.value); setEditing(null); } }}
